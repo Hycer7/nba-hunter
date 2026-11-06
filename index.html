@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><title>NBA Hunter</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-is@18.3.1/umd/react-is.production.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/recharts@2.12.7/umd/Recharts.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.24.7/babel.min.js"></script>
+<style>
+:root{color-scheme:dark;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{background:#0b0f14;color:#d7e0ea;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.num{font-variant-numeric:tabular-nums}
+::-webkit-scrollbar{height:8px;width:8px}::-webkit-scrollbar-thumb{background:#26313f;border-radius:4px}
+</style></head>
+<body><div id="root"></div>
+<script type="text/babel">
+const {useState,useMemo}=React;
+const {ResponsiveContainer,ScatterChart,Scatter,XAxis,YAxis,ZAxis,CartesianGrid,Tooltip,RadarChart,PolarGrid,PolarAngleAxis,Radar,Legend,BarChart,Bar}=Recharts;
+const C={g:"#39ff88",o:"#ff8a1f",b:"#3aa0ff",p:"#121820",l:"#222c3a"};
+
+/* ---------- DATOS SIMULADOS · Temporada 2026/27 · corte 6 nov 2026 ---------- */
+function rng(s){let h=1779033703^s.length;for(let i=0;i<s.length;i++){h=Math.imul(h^s.charCodeAt(i),3432918353);h=h<<13|h>>>19}let a=h;return()=>{a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const TD="BOS|Boston Celtics|E|3.5;BKN|Brooklyn Nets|E|-6;NYK|New York Knicks|E|5;PHI|Philadelphia 76ers|E|1;TOR|Toronto Raptors|E|-1;CHI|Chicago Bulls|E|-4;CLE|Cleveland Cavaliers|E|4;DET|Detroit Pistons|E|5.5;IND|Indiana Pacers|E|-1.5;MIL|Milwaukee Bucks|E|-2;ATL|Atlanta Hawks|E|1.5;CHA|Charlotte Hornets|E|-.5;MIA|Miami Heat|E|-4;ORL|Orlando Magic|E|2;WAS|Washington Wizards|E|-5;DAL|Dallas Mavericks|W|-1;DEN|Denver Nuggets|W|4.5;GSW|Golden State Warriors|W|1;HOU|Houston Rockets|W|3;LAC|LA Clippers|W|-2;LAL|Los Angeles Lakers|W|3.5;MEM|Memphis Grizzlies|W|-2.5;MIN|Minnesota Timberwolves|W|4;NOP|New Orleans Pelicans|W|-4.5;OKC|Oklahoma City Thunder|W|8;PHX|Phoenix Suns|W|-1;POR|Portland Trail Blazers|W|0;SAC|Sacramento Kings|W|-5;SAS|San Antonio Spurs|W|6;UTA|Utah Jazz|W|-3.5";
+let REAL=false;
+let LOADERR="";
+let SCHED=null;
+let TEAMS=TD.split(";").map(s=>{const[a,n,c,net]=s.split("|");const r=rng(a);const nn=+net+(r()-.5)*1.5;
+ const pace=96.5+r()*5,off=115+nn/2+(r()-.5)*2,def=115-nn/2+(r()-.5)*2,nr=off-def;
+ const w=Math.max(1,Math.min(11,Math.round(6+nr*.45+(r()-.5)*2)));
+ return{a,n,c,w,l:12-w,pace,off,def,net:nr,efg:52.5+nr*.22+(r()-.5)*1.5,tov:14.6-nr*.07+(r()-.5)*1.2,reb:50+nr*.18+(r()-.5)*1.6}});
+let TM=Object.fromEntries(TEAMS.map(t=>[t.a,t]));
+const PD="Shai Gilgeous-Alexander|OKC|G|97;Chet Holmgren|OKC|C|82;Jalen Williams|OKC|F|80;Victor Wembanyama|SAS|C|95;De'Aaron Fox|SAS|G|80;Stephon Castle|SAS|G|76;Jalen Brunson|NYK|G|88;Karl-Anthony Towns|NYK|C|84;Mikal Bridges|NYK|F|76;Cade Cunningham|DET|G|88;Jalen Duren|DET|C|78;Ausar Thompson|DET|F|74;Donovan Mitchell|CLE|G|87;Evan Mobley|CLE|F|83;Darius Garland|CLE|G|76;Nikola Jokic|DEN|C|99;Jamal Murray|DEN|G|82;Aaron Gordon|DEN|F|75;Anthony Edwards|MIN|G|90;Julius Randle|MIN|F|78;Rudy Gobert|MIN|C|76;Kevin Durant|HOU|F|86;Alperen Sengun|HOU|C|85;Amen Thompson|HOU|G|78;Jayson Tatum|BOS|F|90;Jaylen Brown|BOS|F|87;Derrick White|BOS|G|76;Luka Doncic|LAL|G|96;LeBron James|LAL|F|82;Austin Reaves|LAL|G|77;Stephen Curry|GSW|G|86;Jimmy Butler|GSW|F|80;Draymond Green|GSW|F|70;Cooper Flagg|DAL|F|78;Kyrie Irving|DAL|G|82;Dereck Lively II|DAL|C|72;Giannis Antetokounmpo|MIL|F|94;Myles Turner|MIL|C|74;Joel Embiid|PHI|C|88;Tyrese Maxey|PHI|G|88;VJ Edgecombe|PHI|G|74;Jalen Johnson|ATL|F|86;Dyson Daniels|ATL|G|76;Onyeka Okongwu|ATL|C|72;Paolo Banchero|ORL|F|86;Franz Wagner|ORL|F|82;Jalen Suggs|ORL|G|74;Bam Adebayo|MIA|C|82;Tyler Herro|MIA|G|80;Norman Powell|MIA|G|76;Pascal Siakam|IND|F|80;Tyrese Haliburton|IND|G|85;Andrew Nembhard|IND|G|72;Scottie Barnes|TOR|F|84;Brandon Ingram|TOR|F|78;Immanuel Quickley|TOR|G|76;Josh Giddey|CHI|G|78;Coby White|CHI|G|74;Matas Buzelis|CHI|F|72;LaMelo Ball|CHA|G|85;Brandon Miller|CHA|F|80;Kon Knueppel|CHA|G|74;Michael Porter Jr.|BKN|F|76;Cam Thomas|BKN|G|74;Trae Young|WAS|G|82;Alex Sarr|WAS|C|70;Zion Williamson|NOP|F|82;Trey Murphy III|NOP|F|78;Dejounte Murray|NOP|G|74;Ja Morant|MEM|G|82;Zach Edey|MEM|C|70;Devin Booker|PHX|G|88;Jalen Green|PHX|G|74;Deni Avdija|POR|F|82;Donovan Clingan|POR|C|76;Scoot Henderson|POR|G|72;Domantas Sabonis|SAC|C|82;Zach LaVine|SAC|G|76;DeMar DeRozan|SAC|F|74;Lauri Markkanen|UTA|F|84;Keyonte George|UTA|G|76;Ace Bailey|UTA|F|70;Kawhi Leonard|LAC|F|86;James Harden|LAC|G|82";
+let PLAYERS=PD.split(";").map(s=>{const[n,t,p,o]=s.split("|");const ov=+o,r=rng(n),d=ov-60,j=(x)=>(r()-.5)*x;
+ const usg=Math.min(37,16+d*.28+(p==="G"?2:0)+j(3));
+ const ast=(p==="G"?18+d*.5:p==="F"?10+d*.22:8+d*.2)+(n==="Nikola Jokic"?14:0)+j(4);
+ const per=10+d*.42+j(2.5),ts=54+d*.2+j(3),ws=.04+d*.0045+j(.03);
+ const reb=(p==="G"?5.5:p==="F"?9.5:15.5)+d*.05+j(2.5)+(n==="Nikola Jokic"?3:0);
+ return{n,t,p,ovr:ov,usg,ast,per,ts,ws,pie:6+d*.2+j(1.4),reb,pts:usg*1.35+j(3),ast100:ast*.46,mpg:24+d*.28+j(3),c:TM[t].c}});
+const AVG=k=>PLAYERS.reduce((s,p)=>s+p[k],0)/PLAYERS.length;
+const f1=v=>v==null?"–":v.toFixed(1),f3=v=>v==null?"–":v.toFixed(3).replace(/^0/,"");
+const PN={G:"Guard",F:"Forward",C:"Center"};
+function enrich(list,logs){list.forEach(p=>{let g=logs&&logs[p.n];
+ if(!g&&!REAL){const q=rng(p.n+"g");g=Array.from({length:12},(_,i)=>({d:"Partido "+(12-i),o:"",w:q()>.45?"W":"L",min:Math.round(p.mpg*(.85+q()*.3)),pts:Math.round(p.pts*p.mpg/48*(.6+q()*.8)),reb:Math.round(p.reb*p.mpg/48*(.5+q())),ast:Math.round(p.ast100*p.mpg/48*(.5+q())),tp:Math.round(p.pts/9*(q()+.2)),blk:Math.round((p.p==="C"?1.8:.4)*q()*1.6)}))}
+ g=g||[];p.games=g;p.gp=g.length;const av=k=>g.length?g.reduce((s,x)=>s+x[k],0)/g.length:null;
+ p.pp=av("pts");p.rp=av("reb");p.ap=av("ast");p.tp=av("tp");p.bp=av("blk");if(g.length&&logs)p.mpg=av("min")})}
+
+/* ---------- UI base ---------- */
+const Pill=({on,children,...p})=><button {...p} className={"px-3 py-1 rounded text-xs font-semibold border transition "+(on?"bg-[#39ff88] text-black border-[#39ff88]":"border-[#222c3a] text-slate-300 hover:border-[#39ff88]")}>{children}</button>;
+const Panel=({title,right,children,cls=""})=><section className={"rounded-lg border border-[#222c3a] bg-[#121820] "+cls}>{title&&<div className="flex items-center justify-between px-4 py-2 border-b border-[#222c3a]"><h3 className="text-xs font-bold tracking-widest text-slate-400 uppercase">{title}</h3>{right}</div>}<div className="p-4">{children}</div></section>;
+const Sel=({value,onChange,opts})=><select value={value} onChange={e=>onChange(e.target.value)} className="bg-[#0b0f14] border border-[#222c3a] rounded px-2 py-1 text-xs text-slate-200">{opts.map(o=><option key={o[0]} value={o[0]}>{o[1]}</option>)}</select>;
+function Conf({v,set}){return <div className="flex gap-1">{[["ALL","Todos"],["E","Este"],["W","Oeste"]].map(([k,l])=><Pill key={k} on={v===k} onClick={()=>set(k)}>{l}</Pill>)}</div>}
+const TT=({active,payload,children})=>active&&payload&&payload.length?<div className="rounded border border-[#39ff88]/40 bg-[#0b0f14]/95 px-3 py-2 text-xs shadow-xl">{children(payload[0].payload,payload)}</div>:null;
+
+function Tbl({cols,rows,init,onRow,max="70vh"}){
+ const[s,setS]=useState({k:init,d:-1});
+ const data=useMemo(()=>[...rows].sort((a,b)=>{const x=a[s.k],y=b[s.k];return(typeof x==="string"?x.localeCompare(y):x-y)*s.d}),[rows,s]);
+ return <div className="overflow-auto rounded-lg border border-[#222c3a]" style={{maxHeight:max}}>
+ <table className="w-full text-xs num"><thead className="sticky top-0 bg-[#0e141b] z-10"><tr>
+ {cols.map(c=><th key={c.k} onClick={()=>setS(p=>({k:c.k,d:p.k===c.k?-p.d:(c.str?1:-1)}))} className={"px-3 py-2 cursor-pointer select-none whitespace-nowrap text-slate-400 hover:text-[#39ff88] "+(c.str?"text-left":"text-right")}>{c.l}{s.k===c.k?(s.d<0?" ▼":" ▲"):""}</th>)}</tr></thead>
+ <tbody>{data.map((r,i)=><tr key={r.n+i} onClick={()=>onRow&&onRow(r)} className={"border-t border-[#1a222d] hover:bg-[#39ff88]/10 "+(onRow?"cursor-pointer":"")}>
+ {cols.map(c=><td key={c.k} className={"px-3 py-1.5 whitespace-nowrap "+(c.str?"text-left":"text-right")}>{c.f?c.f(r[c.k],r):r[c.k]}</td>)}</tr>)}</tbody></table></div>
+}
+const netC=v=><span style={{color:v>=0?C.g:C.o}} className="font-semibold">{v>0?"+":""}{f1(v)}</span>;
+const confDot=c=><span className="inline-block w-2 h-2 rounded-full mr-2" style={{background:c==="E"?C.b:C.o}}/>;
+
+/* ---------- Dashboard ---------- */
+function Leaders({title,unit,rows,fmt,label}){
+ const top=rows.slice(0,5);
+ return <Panel title={title} cls="relative overflow-hidden">
+ <div className="text-[10px] tracking-widest text-[#39ff88] mb-1">OBJETIVO #1</div>
+ <div className="flex items-end justify-between"><div><div className="text-lg font-bold leading-tight">{label(top[0])}</div></div><div className="text-3xl font-black num" style={{color:C.g}}>{fmt(top[0].v)}<span className="text-xs text-slate-500 ml-1">{unit}</span></div></div>
+ <ol className="mt-3 space-y-1 text-xs">{top.slice(1).map((r,i)=><li key={i} className="flex justify-between text-slate-400"><span>{i+2}. {label(r)}</span><span className="num text-slate-200">{fmt(r.v)}</span></li>)}</ol></Panel>
+}
+function Dashboard(){
+ const[cf,setCf]=useState("ALL");
+ const pie=[...PLAYERS].sort((a,b)=>b.pie-a.pie).map(p=>({...p,v:p.pie}));
+ const net=[...TEAMS].sort((a,b)=>b.net-a.net).map(t=>({...t,v:t.net}));
+ const ts=PLAYERS.filter(p=>p.usg>=18).sort((a,b)=>b.ts-a.ts).map(p=>({...p,v:p.ts}));
+ const data=TEAMS.filter(t=>cf==="ALL"||t.c===cf);
+ const pl=r=>r.a?r.n:`${r.n} (${r.t})`;
+ return <div className="space-y-4">
+ <div className="grid md:grid-cols-3 gap-4">
+ <Leaders title="Líder PIE" unit="%" rows={pie} fmt={f1} label={pl}/>
+ <Leaders title="Líder Net Rating" unit="" rows={net} fmt={v=>(v>0?"+":"")+f1(v)} label={pl}/>
+ <Leaders title="Líder True Shooting %" unit="%" rows={ts} fmt={f1} label={pl}/></div>
+ <Panel title="Mapa de objetivos · OffRtg vs DefRtg" right={<Conf v={cf} set={setCf}/>}>
+ <div className="h-[420px]"><ResponsiveContainer><ScatterChart margin={{top:10,right:20,bottom:20,left:0}}>
+ <CartesianGrid stroke="#1a222d"/>
+ <XAxis type="number" dataKey="off" name="OffRtg" domain={[d=>Math.floor(d-1),d=>Math.ceil(d+1)]} stroke="#64748b" fontSize={11} label={{value:"Ataque (OffRtg) →",position:"bottom",fill:"#64748b",fontSize:11}}/>
+ <YAxis type="number" dataKey="def" name="DefRtg" reversed domain={[d=>Math.floor(d-1),d=>Math.ceil(d+1)]} stroke="#64748b" fontSize={11} label={{value:"← Defensa (menor es mejor)",angle:-90,position:"insideLeft",fill:"#64748b",fontSize:11}}/>
+ <ZAxis range={[90,90]}/>
+ <Tooltip cursor={{strokeDasharray:"3 3",stroke:C.g}} content={<TT>{t=><div><div className="font-bold text-sm">{t.n}</div><div className="text-slate-400">{t.w}-{t.l}</div><div>OffRtg <b>{f1(t.off)}</b> · DefRtg <b>{f1(t.def)}</b></div><div>Net {netC(t.net)}</div></div>}</TT>}/>
+ <Scatter data={data} shape={p=><g><circle cx={p.cx} cy={p.cy} r={7} fill={p.payload.c==="E"?C.b:C.o} fillOpacity={.35} stroke={p.payload.c==="E"?C.b:C.o}/><text x={p.cx} y={p.cy-11} textAnchor="middle" fontSize={9} fill="#cbd5e1">{p.payload.a}</text></g>}/>
+ </ScatterChart></ResponsiveContainer></div>
+ <div className="text-[11px] text-slate-500 mt-1">Arriba a la derecha = mejor ataque y mejor defensa. <span style={{color:C.b}}>● Este</span> <span style={{color:C.o}}>● Oeste</span></div></Panel></div>
+}
+
+/* ---------- Team Tracker ---------- */
+function Teams(){
+ const[cf,setCf]=useState("ALL");
+ const rows=TEAMS.filter(t=>cf==="ALL"||t.c===cf);
+ const cols=[{k:"n",l:"Equipo",str:1,f:(v,r)=><span className="font-semibold">{confDot(r.c)}{v}</span>},{k:"w",l:"W-L",f:(v,r)=>`${r.w}-${r.l}`},
+ {k:"pace",l:"Pace",f:f1},{k:"off",l:"OffRtg",f:f1},{k:"def",l:"DefRtg",f:f1},{k:"net",l:"NetRtg",f:netC},{k:"efg",l:"eFG%",f:f1},{k:"tov",l:"TOV%",f:f1},{k:"reb",l:"Reb%",f:f1}];
+ return <Panel title="Team Tracker · 30 franquicias" right={<Conf v={cf} set={setCf}/>}><Tbl cols={cols} rows={rows} init="net"/>
+ <p className="text-[11px] text-slate-500 mt-2">Clic en una cabecera para ordenar. Datos simulados.</p></Panel>
+}
+
+/* ---------- Radar helpers ---------- */
+const cl=v=>Math.max(4,Math.min(100,v));
+let PAX=[["Puntos","pp",v=>v/32*100],["Asistencias","ap",v=>v/10*100],["Rebotes","rp",v=>v/13*100],["Triples","tp",v=>v/4*100],["Tapones","bp",v=>v/2.5*100],["TS%","ts",v=>(v-50)/15*100]];
+const TAX=[["OffRtg","off",v=>(v-106)/16*100],["DefRtg (inv.)","def",v=>(122-v)/16*100],["Pace","pace",v=>(v-95)/8*100],["eFG%","efg",v=>(v-48)/9*100],["TOV% (inv.)","tov",v=>(18-v)/6*100],["Reb%","reb",v=>(v-46)/9*100]];
+const mkRadar=(ax,a,b)=>ax.map(([l,k,s])=>({l,A:cl(s(a[k])),B:cl(s(b[k])),ra:a[k],rb:b[k]}));
+function Dual({data,na,nb,ca=C.g,cb=C.o}){
+ const tip=<Tooltip content={({active,payload})=>active&&payload&&payload.length?<div className="rounded border border-[#39ff88]/40 bg-[#0b0f14]/95 px-3 py-2 text-xs"><div className="font-bold mb-1">{payload[0].payload.l}</div><div style={{color:ca}}>{na}: {f1(payload[0].payload.ra)}</div><div style={{color:cb}}>{nb}: {f1(payload[0].payload.rb)}</div></div>:null}/>;
+ return <div className="grid md:grid-cols-2 gap-4">
+ <div className="h-80"><ResponsiveContainer><RadarChart data={data} outerRadius="70%"><PolarGrid stroke="#26313f"/><PolarAngleAxis dataKey="l" tick={{fill:"#94a3b8",fontSize:11}}/>
+ <Radar name={na} dataKey="A" stroke={ca} fill={ca} fillOpacity={.3}/><Radar name={nb} dataKey="B" stroke={cb} fill={cb} fillOpacity={.2}/>{tip}<Legend wrapperStyle={{fontSize:11}}/></RadarChart></ResponsiveContainer></div>
+ <div className="h-80"><ResponsiveContainer><BarChart data={data} layout="vertical" margin={{left:20,right:10}}><CartesianGrid stroke="#1a222d" horizontal={false}/><XAxis type="number" domain={[0,100]} hide/><YAxis type="category" dataKey="l" stroke="#94a3b8" fontSize={11} width={90}/>
+ {tip}<Bar name={na} dataKey="A" fill={ca} radius={2}/><Bar name={nb} dataKey="B" fill={cb} radius={2}/><Legend wrapperStyle={{fontSize:11}}/></BarChart></ResponsiveContainer></div></div>
+}
+
+/* ---------- Player Scouting ---------- */
+function Report({p,close}){
+ const avg=Object.fromEntries(PAX.map(([,k])=>[k,AVG(k)]));
+ const data=mkRadar(PAX,p,avg);
+ const best=[...data].sort((a,b)=>b.A-a.A)[0],worst=[...data].sort((a,b)=>a.A-b.A)[0];
+ const t=TM[p.t];
+ const stats=[["Puntos",f1(p.pp)],["Asistencias",f1(p.ap)],["Rebotes",f1(p.rp)],["Triples anotados",f1(p.tp)],["Tapones",f1(p.bp)],["Minutos",f1(p.mpg)],["Partidos",p.gp],["USG%",f1(p.usg)],["TS%",f1(p.ts)],["PIE",f1(p.pie)]];
+ return <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-3" onClick={close}>
+ <div className="w-full max-w-3xl max-h-[92vh] overflow-auto rounded-xl border border-[#39ff88]/40 bg-[#0e141b] shadow-2xl" onClick={e=>e.stopPropagation()}>
+ <div className="flex items-start justify-between p-4 border-b border-[#222c3a]">
+ <div><div className="text-[10px] tracking-widest text-[#39ff88]">HUNTER REPORT</div><h2 className="text-2xl font-black">{p.n}</h2>
+ <div className="text-xs text-slate-400">{confDot(p.c)}{t.n} · {PN[p.p]} · {t.w}-{t.l}</div></div>
+ <button onClick={close} className="text-slate-400 hover:text-white text-xl px-2">✕</button></div>
+ <div className="p-4 space-y-4">
+ <div className="text-[10px] tracking-widest text-slate-500">MEDIA POR PARTIDO · TEMPORADA 2026/27</div><div className="grid grid-cols-2 sm:grid-cols-5 gap-2">{stats.map(([l,v])=><div key={l} className="rounded border border-[#222c3a] bg-[#121820] p-2 text-center"><div className="text-[10px] text-slate-500">{l}</div><div className="text-lg font-bold num" style={{color:C.g}}>{v}</div></div>)}</div>
+ <div className="h-72"><ResponsiveContainer><RadarChart data={data} outerRadius="70%"><PolarGrid stroke="#26313f"/><PolarAngleAxis dataKey="l" tick={{fill:"#94a3b8",fontSize:11}}/>
+ <Radar name={p.n} dataKey="A" stroke={C.g} fill={C.g} fillOpacity={.35}/><Radar name="Media de la liga" dataKey="B" stroke={C.b} fill={C.b} fillOpacity={.12}/>
+ <Tooltip content={({active,payload})=>active&&payload&&payload.length?<div className="rounded border border-[#39ff88]/40 bg-[#0b0f14]/95 px-3 py-2 text-xs"><b>{payload[0].payload.l}</b><div style={{color:C.g}}>{p.n}: {f1(payload[0].payload.ra)}</div><div style={{color:C.b}}>Liga: {f1(payload[0].payload.rb)}</div></div>:null}/>
+ <Legend wrapperStyle={{fontSize:11}}/></RadarChart></ResponsiveContainer></div>
+ <div><div className="text-[10px] tracking-widest text-slate-500 mb-1">PARTIDO A PARTIDO</div>
+ {p.games.length?<div className="overflow-auto max-h-64 rounded border border-[#222c3a]"><table className="w-full text-xs num"><thead className="sticky top-0 bg-[#0e141b]"><tr className="text-slate-400">{["Fecha","Rival","Res.","MIN","Puntos","Asistencias","Rebotes","Triples","Tapones"].map((h,i)=><th key={h} className={"px-2 py-1.5 "+(i<3?"text-left":"text-right")}>{h}</th>)}</tr></thead>
+ <tbody><tr className="font-bold bg-[#121820]" style={{color:C.g}}><td className="px-2 py-1" colSpan={3}>MEDIA ({p.gp} partidos)</td>{[p.mpg,p.pp,p.ap,p.rp,p.tp,p.bp].map((v,j)=><td key={j} className="px-2 py-1 text-right">{f1(v)}</td>)}</tr>
+ {p.games.map((g,i)=><tr key={i} className="border-t border-[#1a222d]"><td className="px-2 py-1 whitespace-nowrap">{g.d}</td><td className="px-2 py-1 whitespace-nowrap">{g.o}</td><td className="px-2 py-1" style={{color:g.w==="W"?C.g:C.o}}>{g.w}</td>{[g.min,g.pts,g.ast,g.reb,g.tp,g.blk].map((v,j)=><td key={j} className="px-2 py-1 text-right">{v}</td>)}</tr>)}</tbody></table></div>:<div className="text-xs text-slate-500">Sin gamelog.json: ejecuta fetch_games.py.</div>}</div>
+ <div className="text-xs text-slate-300 rounded border border-[#222c3a] bg-[#121820] p-3"><span className="text-[#39ff88] font-bold">Notas del cazador: </span>su mayor ventaja está en <b>{best.l}</b> y el punto a vigilar es <b>{worst.l}</b> frente a la media de la muestra. Datos simulados.</div>
+ </div></div></div>
+}
+function Players(){
+ const[q,setQ]=useState(""),[pos,setPos]=useState("ALL"),[tm,setTm]=useState("ALL"),[cf,setCf]=useState("ALL"),[sel,setSel]=useState(null);
+ const rows=PLAYERS.filter(p=>(pos==="ALL"||p.p===pos)&&(tm==="ALL"||p.t===tm)&&(cf==="ALL"||p.c===cf)&&p.n.toLowerCase().includes(q.toLowerCase()));
+ const cols=[{k:"n",l:"Jugador",str:1,f:v=><span className="font-semibold">{v}</span>},{k:"t",l:"Eq.",str:1},{k:"p",l:"Pos",str:1},{k:"gp",l:"PJ"},{k:"mpg",l:"MIN",f:f1},{k:"pp",l:"Puntos",f:v=><b style={{color:C.g}}>{f1(v)}</b>},{k:"ap",l:"Asistencias",f:f1},{k:"rp",l:"Rebotes",f:f1},{k:"tp",l:"Triples anotados",f:f1},{k:"bp",l:"Tapones",f:f1},{k:"usg",l:"USG%",f:f1},{k:"ts",l:"TS%",f:f1},{k:"pie",l:"PIE",f:f1}];
+ return <Panel title="Player Scouting · base de datos" right={<span className="text-[11px] text-slate-500">{rows.length} jugadores</span>}>
+ <div className="flex flex-wrap items-center gap-3 mb-3">
+ <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Buscar jugador…" className="bg-[#0b0f14] border border-[#222c3a] rounded px-3 py-1 text-xs w-48 focus:outline-none focus:border-[#39ff88]"/>
+ <div className="flex gap-1">{[["ALL","Todas"],["G","Guard"],["F","Forward"],["C","Center"]].map(([k,l])=><Pill key={k} on={pos===k} onClick={()=>setPos(k)}>{l}</Pill>)}</div>
+ <Conf v={cf} set={setCf}/>
+ <Sel value={tm} onChange={setTm} opts={[["ALL","Todos los equipos"],...TEAMS.map(t=>[t.a,t.n])]}/></div>
+ <Tbl cols={cols} rows={rows} init="pp" onRow={setSel}/>
+ <p className="text-[11px] text-slate-500 mt-2">Clic en un jugador para abrir su Hunter Report.</p>
+ {sel&&<Report p={sel} close={()=>setSel(null)}/>}</Panel>
+}
+
+/* ---------- Matchup ---------- */
+function Matchup(){
+ const[mode,setMode]=useState("team"),[a,setA]=useState("OKC"),[b,setB]=useState("SAS"),[pa,setPa]=useState(()=>[...PLAYERS].sort((x,y)=>y.pie-x.pie)[0].n),[pb,setPb]=useState(()=>[...PLAYERS].sort((x,y)=>y.pie-x.pie)[1].n);
+ const isT=mode==="team";
+ const A=isT?TM[a]:PLAYERS.find(p=>p.n===pa),B=isT?TM[b]:PLAYERS.find(p=>p.n===pb);
+ const data=mkRadar(isT?TAX:PAX,A,B);
+ const opts=isT?TEAMS.map(t=>[t.a,t.n]):PLAYERS.map(p=>[p.n,`${p.n} (${p.t})`]);
+ const rows=(isT?[["W-L",x=>`${x.w}-${x.l}`],["OffRtg",x=>f1(x.off)],["DefRtg",x=>f1(x.def)],["NetRtg",x=>f1(x.net)],["eFG%",x=>f1(x.efg)]]:[["Puntos",x=>f1(x.pp)],["Asistencias",x=>f1(x.ap)],["Rebotes",x=>f1(x.rp)],["Triples anotados",x=>f1(x.tp)],["Tapones",x=>f1(x.bp)]]);
+ return <Panel title="Hunter Matchup · H2H" right={<div className="flex gap-1"><Pill on={isT} onClick={()=>setMode("team")}>Equipos</Pill><Pill on={!isT} onClick={()=>setMode("player")}>Jugadores</Pill></div>}>
+ <div className="flex flex-wrap items-center gap-3 mb-4">
+ <span style={{color:C.g}} className="text-xs font-bold">A</span><Sel value={isT?a:pa} onChange={isT?setA:setPa} opts={opts}/>
+ <span className="text-slate-500 text-xs">vs</span>
+ <span style={{color:C.o}} className="text-xs font-bold">B</span><Sel value={isT?b:pb} onChange={isT?setB:setPb} opts={opts}/></div>
+ <Dual data={data} na={isT?A.n:A.n} nb={B.n}/>
+ <div className="mt-4 overflow-auto"><table className="w-full text-xs num"><thead><tr className="text-slate-500"><th className="text-left py-1">Métrica</th><th style={{color:C.g}} className="text-right">{A.n}</th><th style={{color:C.o}} className="text-right">{B.n}</th></tr></thead>
+ <tbody>{rows.map(([l,fn])=><tr key={l} className="border-t border-[#1a222d]"><td className="py-1 text-slate-400">{l}</td><td className="text-right">{fn(A)}</td><td className="text-right">{fn(B)}</td></tr>)}</tbody></table></div></Panel>
+}
+
+/* ---------- Props ---------- */
+const PS=[["pts","Puntos",9.5],["ast","Asistencias",2.5],["reb","Rebotes",3.5],["tp","Triples anotados",1.5],["blk","Tapones",.5]];
+function PropCard({r,p,g,win,onPlayer,onGame}){
+ const[open,setOpen]=useState(false),[bad,setBad]=useState(false);
+ const all=p.games,w=all.slice(0,win||999),L=r.line,ok=x=>x[r.k]>L,home=g.home===p.t;
+ const wl=win===5?"L5":win===10?"L10":"Temp.",h5=all.slice(0,5).filter(ok).length,n5=Math.min(5,all.length);
+ const mins=w.reduce((s,x)=>s+x.min,0),per36=mins?w.reduce((s,x)=>s+x[r.k],0)/mins*36:null;
+ const ven=all.filter(x=>x.o&&(home?/vs\./.test(x.o):/@/.test(x.o))),vh=ven.filter(ok).length;
+ const vavg=ven.length?ven.reduce((s,x)=>s+x[r.k],0)/ven.length:null;
+ const col=r.pct>=90?C.g:r.pct>=80?"#c8ff3a":C.o;
+ const ini=p.n.split(" ").map(x=>x[0]).slice(0,2).join("");
+ const Box=({l,v,sub})=><div className="text-center px-1"><div className="text-[10px] text-slate-500">{l}</div><div className="text-sm font-bold num">{v}</div>{sub&&<div className="text-[10px]" style={{color:C.g}}>{sub}</div>}</div>;
+ return <div className="rounded-xl border border-[#222c3a] bg-[#0e141b] p-3 space-y-3">
+ <div className="flex items-center gap-3">
+ {p.id&&!bad?<img src={"https://cdn.nba.com/headshots/nba/latest/260x190/"+p.id+".png"} onError={()=>setBad(true)} className="w-12 h-12 rounded-full object-cover bg-[#1a222d]" alt=""/>:<div className="w-12 h-12 rounded-full bg-[#1a222d] flex items-center justify-center text-sm font-bold text-slate-400">{ini}</div>}
+ <div className="min-w-0 flex-1"><div className="font-black text-lg leading-tight truncate">{p.n}</div><div className="text-xs text-slate-400">{confDot(p.c)}{TM[p.t].n}</div></div>
+ <div className="text-xs font-bold">{g.t}</div></div>
+ <div className="flex items-center justify-between rounded border border-[#222c3a] px-3 py-2 text-xs"><span className="text-slate-500">PARTIDO</span><span className="font-semibold">{TM[g.away]?TM[g.away].n:g.away} <span className="text-slate-500">vs</span> {TM[g.home]?TM[g.home].n:g.home}</span></div>
+ <div className="rounded px-3 py-2 flex items-center gap-3" style={{background:"#39ff8814",border:"1px solid #39ff8833"}}>
+ <div className="font-bold text-sm whitespace-nowrap" style={{color:C.g}}>Más de {L} {r.stat.toLowerCase()}</div>
+ <div className="flex-1 h-1.5 rounded bg-[#1a222d] overflow-hidden"><div className="h-full" style={{width:r.pct+"%",background:col}}/></div>
+ <div className="text-right leading-tight"><span className="text-xl font-black num" style={{color:col}}>{Math.round(r.pct)}%</span> <span className="text-[10px] text-slate-500">{wl}</span></div>
+ <div className="text-xs font-bold num whitespace-nowrap">{r.hit}/{r.tot} <span className="text-[10px] text-slate-500">ACIERTOS</span></div></div>
+ {ven.length>0&&<div className="rounded border border-[#222c3a] px-3 py-2"><div className="text-[11px] text-slate-400">Como {home?"local":"visitante"}</div><div className="font-bold text-sm num">{vh}/{ven.length} <span style={{color:C.g}}>{Math.round(vh/ven.length*100)}%</span></div><div className="text-[10px] text-slate-500">{f1(vavg)} de media</div></div>}
+ <div className="grid grid-cols-5 divide-x divide-[#222c3a] rounded border border-[#222c3a] py-2">
+ <Box l={"Últ. 5"} v={h5+"/"+n5} sub={n5?Math.round(h5/n5*100)+"%":""}/><Box l="Media" v={f1(r.avg)}/><Box l="Por 36'" v={f1(per36)}/><Box l="Min. últ." v={all[0]?all[0].min:"–"}/><Box l="Min. prom." v={f1(mins/w.length)}/></div>
+ <div><div className="flex justify-between text-[10px] text-slate-500 mb-1"><span>ÚLTIMOS RESULTADOS</span><span>El más reciente primero</span></div>
+ <div className="grid grid-cols-5 gap-1.5">{w.slice(0,10).map((x,i)=><div key={i} className="rounded py-2 text-center text-xs font-bold num" style={{background:ok(x)?"#39ff8820":"#ff8a1f20",color:ok(x)?C.g:C.o,border:"1px solid "+(ok(x)?"#39ff8844":"#ff8a1f44")}}>{x[r.k]}</div>)}</div></div>
+ <button onClick={()=>setOpen(!open)} className="w-full flex justify-between text-xs text-slate-400 hover:text-white border-t border-[#222c3a] pt-2"><span>Ver detalle de {wl}</span><span>{open?"▲":"▼"}</span></button>
+ {open&&<div className="overflow-auto max-h-48 rounded border border-[#222c3a]"><table className="w-full text-xs num"><thead><tr className="text-slate-400"><th className="px-2 py-1 text-left">Fecha</th><th className="px-2 py-1 text-left">Rival</th><th className="px-2 py-1 text-right">{r.stat}</th><th className="px-2 py-1 text-right">MIN</th></tr></thead><tbody>{w.slice(0,10).map((x,i)=><tr key={i} className="border-t border-[#1a222d]"><td className="px-2 py-1 whitespace-nowrap">{x.d}</td><td className="px-2 py-1 whitespace-nowrap">{x.o}</td><td className="px-2 py-1 text-right" style={{color:ok(x)?C.g:C.o}}>{x[r.k]}</td><td className="px-2 py-1 text-right">{x.min}</td></tr>)}</tbody></table></div>}
+ <div className="flex justify-between text-xs font-semibold"><button onClick={onPlayer} style={{color:C.g}}>Ver jugador →</button><button onClick={onGame} className="text-slate-300 hover:text-white">Ver partido →</button></div></div>
+}
+function Props(){
+ const[st,setSt]=useState("ALL"),[win,setWin]=useState(10),[mp,setMp]=useState(80),[view,setView]=useState("cards"),[gm,setGm]=useState("ALL"),[sel,setSel]=useState(null),[n,setN]=useState(24);
+ const SP=(u,o)=>new Intl.DateTimeFormat("es-ES",{timeZone:"Europe/Madrid",...o}).format(new Date(u));
+ const dkey=u=>new Intl.DateTimeFormat("en-CA",{timeZone:"Europe/Madrid"}).format(new Date(u));
+ const real=!!(SCHED&&SCHED.games&&SCHED.games.length&&SCHED.games.every(g=>g.utc));
+ const all=real?SCHED.games.map(g=>({...g,day:dkey(g.utc),t:SP(g.utc,{hour:"2-digit",minute:"2-digit"})})).sort((a,b)=>a.utc<b.utc?-1:1):[];
+ const days=[...new Set(all.map(g=>g.day))],today=dkey(new Date());
+ const[day,setDay]=useState(()=>days.find(d=>d>=today)||days[0]);
+ const sc=real?{date:day,games:all.filter(g=>g.day===day)}:{date:"calendario simulado",games:[{away:"OKC",home:"SAS",t:""},{away:"NYK",home:"BOS",t:""},{away:"DEN",home:"LAL",t:""}]};
+ const info={},gmap={};sc.games.forEach(g=>{const lb=g.away+" @ "+g.home;info[g.home]=lb;info[g.away]=lb;gmap[g.home]=g;gmap[g.away]=g});
+ const rows=useMemo(()=>{const out=[];
+  PLAYERS.forEach(p=>{if(!info[p.t]||(gm!=="ALL"&&info[p.t]!==gm))return;const g=p.games.slice(0,win||999);if(g.length<5)return;
+   PS.forEach(([k,l,min])=>{if(st!=="ALL"&&st!==k)return;const v=g.map(x=>x[k]),avg=v.reduce((a,b)=>a+b,0)/v.length;let best=null;
+    for(let L=min;L<=avg+.5;L+=1){const h=v.filter(x=>x>L).length,pc=h/v.length*100;if(pc>=mp)best={L,h,pc}}
+    if(best)out.push({n:p.n,t:p.t,k,game:info[p.t],stat:l,line:best.L,pct:best.pc,hit:best.h,tot:v.length,avg,vals:v,last:v[0],score:best.pc+(avg-best.L)})})});
+  return out.sort((a,b)=>b.score-a.score)},[st,win,mp,gm,day]);
+ const cols=[{k:"n",l:"Jugador",str:1,f:(v,r)=><span><b>{v}</b> <span className="text-slate-500">{r.t}</span></span>},{k:"game",l:"Partido",str:1},{k:"stat",l:"Estadística",str:1},
+ {k:"line",l:"Línea",f:v=><b style={{color:C.g}}>Más de {v}</b>},{k:"pct",l:"Probabilidad",f:(v,r)=><span className="font-semibold" style={{color:v>=90?C.g:v>=80?"#c8ff3a":C.o}}>{r.hit}/{r.tot} · {Math.round(v)}%</span>},
+ {k:"avg",l:"Media",f:f1},{k:"last",l:"Últimos partidos (reciente → antiguo)",str:1,f:(_,r)=><span className="inline-flex gap-1">{r.vals.slice(0,10).map((x,i)=><span key={i} className="px-1 rounded text-[10px]" style={{background:x>r.line?"#39ff8826":"#ff8a1f26",color:x>r.line?C.g:C.o}}>{x}</span>)}</span>}];
+ return <div className="space-y-4">
+ <Panel title={real?"Partidos del "+SP(day+"T12:00:00Z",{weekday:"long",day:"numeric",month:"long"})+" · horario de España":"Partidos · "+sc.date} right={gm!=="ALL"&&<button onClick={()=>setGm("ALL")} className="text-[11px] text-[#39ff88]">Ver todos</button>}>
+ {real&&<div className="flex gap-2 overflow-x-auto pb-2 mb-3">{days.map(d=>{const n=all.filter(g=>g.day===d).length,dt=d+"T12:00:00Z";return <button key={d} onClick={()=>{setDay(d);setGm("ALL")}} className={"shrink-0 px-3 py-2 rounded border text-center "+(d===day?"border-[#39ff88] text-[#39ff88] bg-[#39ff88]/10":"border-[#222c3a] text-slate-300")}><div className="text-[10px] uppercase">{SP(dt,{weekday:"short"})}</div><div className="text-sm font-bold">{SP(dt,{day:"numeric",month:"short"})}</div><div className="text-[10px] text-slate-500">{n} partidos</div></button>})}</div>}
+ {sc.games.length?<div className="flex flex-wrap gap-2">{sc.games.map((g,i)=>{const lb=g.away+" @ "+g.home;return <button key={i} onClick={()=>setGm(gm===lb?"ALL":lb)} className={"px-3 py-1 rounded border text-xs "+(gm===lb?"border-[#39ff88] text-[#39ff88]":"border-[#222c3a]")}>{lb} <span className="text-slate-500">{g.t}</span></button>})}</div>:<div className="text-xs text-slate-500">Ese día no hay partidos.</div>}</Panel>
+ <Panel title="Props · líneas con más acierto" right={<span className="text-[11px] text-slate-500">{rows.length} props</span>}>
+ <div className="flex flex-wrap items-center gap-3 mb-3">
+ <div className="flex gap-1"><Pill on={view==="cards"} onClick={()=>setView("cards")}>Tarjetas</Pill><Pill on={view==="table"} onClick={()=>setView("table")}>Tabla</Pill></div>
+ <div className="flex flex-wrap gap-1"><Pill on={st==="ALL"} onClick={()=>setSt("ALL")}>Todas</Pill>{PS.map(([k,l])=><Pill key={k} on={st===k} onClick={()=>setSt(k)}>{l}</Pill>)}</div>
+ <Sel value={win} onChange={v=>setWin(+v)} opts={[[5,"Últimos 5"],[10,"Últimos 10"],[0,"Toda la temporada"]]}/>
+ <Sel value={mp} onChange={v=>setMp(+v)} opts={[[70,"Mín. 70%"],[80,"Mín. 80%"],[90,"Mín. 90%"],[100,"Solo 100%"]]}/></div>
+ {!rows.length?<div className="text-xs text-slate-500 py-6 text-center">Sin props con ese filtro. Baja el porcentaje mínimo o amplía los partidos.</div>
+ :view==="table"?<Tbl cols={cols} rows={rows} init="score"/>
+ :<div><div className="grid sm:grid-cols-2 xl:grid-cols-3 gap-3">{rows.slice(0,n).map((r,i)=>{const p=PLAYERS.find(x=>x.n===r.n);return <PropCard key={r.n+r.k} r={r} p={p} g={gmap[p.t]} win={win} onPlayer={()=>setSel(p)} onGame={()=>setGm(r.game)}/>})}</div>
+ {rows.length>n&&<div className="text-center mt-3"><Pill onClick={()=>setN(n+24)}>Mostrar más ({rows.length-n})</Pill></div>}</div>}
+ <p className="text-[11px] text-slate-500 mt-3">Para cada jugador y estadística se busca la línea más alta que superó en al menos ese porcentaje de sus partidos. Es frecuencia histórica, no una cuota real ni una predicción. No incluye lesiones ni rival: comprueba que el jugador va a jugar.</p></Panel>
+ {sel&&<Report p={sel} close={()=>setSel(null)}/>}</div>
+}
+
+/* ---------- App ---------- */
+const Logo=()=><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#39ff88" strokeWidth="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="#39ff88"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>;
+function App(){
+ const[tab,setTab]=useState("dash");
+ const tabs=[["dash","Hunter Dashboard"],["teams","Team Tracker"],["players","Player Scouting"],["match","Hunter Matchup"],["props","Props"]];
+ return <div className="min-h-screen">
+ <header className="sticky top-0 z-40 border-b border-[#222c3a] bg-[#0b0f14]/95 backdrop-blur">
+ <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
+ <div className="flex items-center gap-2"><Logo/><span className="text-xl font-black tracking-[.18em]">NBA <span style={{color:C.g}}>HUNTER</span></span></div>
+ <nav className="flex gap-1 overflow-x-auto">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={"px-3 py-1.5 text-xs font-semibold rounded whitespace-nowrap "+(tab===k?"bg-[#39ff88]/15 text-[#39ff88] border border-[#39ff88]/50":"text-slate-400 hover:text-white border border-transparent")}>{l}</button>)}</nav>
+ <div className="ml-auto text-[11px] text-slate-500">v3 · Temporada 2026/27 · corte 6 nov 2026</div></div></header>
+ <main className="max-w-7xl mx-auto px-4 py-4">
+ {tab==="dash"&&<Dashboard/>}{tab==="teams"&&<Teams/>}{tab==="players"&&<Players/>}{tab==="match"&&<Matchup/>}{tab==="props"&&<Props/>}
+ <footer className="text-[11px] text-slate-600 text-center mt-6">{REAL?"Datos reales de stats.nba.com vía nba_api. PER y WS/48 no disponibles.":"Estadísticas simuladas con fines de demostración."+(LOADERR?" Motivo: "+LOADERR:"")}</footer></main></div>
+}
+(async()=>{try{const[t,p]=await Promise.all([fetch("teams.json").then(r=>r.json()),fetch("players.json").then(r=>r.json())]);
+ TEAMS=t;TM=Object.fromEntries(t.map(x=>[x.a,x]));PLAYERS=p.filter(x=>TM[x.t]);REAL=true;PAX=PAX.filter(a=>a[1]!=="per"&&a[1]!=="ws");
+}catch(e){console.warn("Usando datos simulados",e);LOADERR=String(e)}
+let LOGS=null;try{LOGS=await fetch("gamelog.json").then(r=>r.json())}catch(e){}
+try{SCHED=await fetch("schedule.json").then(r=>r.json())}catch(e){}
+enrich(PLAYERS,LOGS);
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);})();
+</script></body></html>
