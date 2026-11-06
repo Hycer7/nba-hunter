@@ -1,5 +1,10 @@
 <!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8"><title>NBA Hunter</title>
+<html lang="es"><head><meta charset="utf-8"><title>NBA Hunter · Analítica avanzada NBA</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="description" content="NBA Hunter: estadísticas avanzadas, props y comparador de equipos y jugadores de la NBA.">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
@@ -250,7 +255,7 @@ function Props(){
 }
 
 /* ---------- App ---------- */
-const Logo=()=><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#39ff88" strokeWidth="1.8"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.2" fill="#39ff88"/><path d="M12 1v5M12 18v5M1 12h5M18 12h5"/></svg>;
+const Logo=()=><svg width="36" height="36" viewBox="0 0 128 128"><rect x="4" y="4" width="120" height="120" rx="28" fill="#0b0f14" stroke="#222c3a" strokeWidth="2"/><g stroke="#39ff88" strokeWidth="4" strokeLinecap="round" fill="none"><circle cx="64" cy="64" r="40"/><line x1="64" y1="12" x2="64" y2="30"/><line x1="64" y1="98" x2="64" y2="116"/><line x1="12" y1="64" x2="30" y2="64"/><line x1="98" y1="64" x2="116" y2="64"/></g><g stroke="#ff8a1f" strokeWidth="3" strokeLinecap="round" fill="none"><circle cx="64" cy="64" r="24"/><line x1="64" y1="40" x2="64" y2="88"/><line x1="40" y1="64" x2="88" y2="64"/><path d="M47 47 Q61 64 47 81"/><path d="M81 47 Q67 64 81 81"/></g><circle cx="64" cy="64" r="3.5" fill="#39ff88"/></svg>;
 function App(){
  const[tab,setTab]=useState("dash");
  const tabs=[["dash","Hunter Dashboard"],["teams","Team Tracker"],["players","Player Scouting"],["match","Hunter Matchup"],["props","Props"]];
@@ -259,7 +264,7 @@ function App(){
  <div className="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-2">
  <div className="flex items-center gap-2"><Logo/><span className="text-xl font-black tracking-[.18em]">NBA <span style={{color:C.g}}>HUNTER</span></span></div>
  <nav className="flex gap-1 overflow-x-auto">{tabs.map(([k,l])=><button key={k} onClick={()=>setTab(k)} className={"px-3 py-1.5 text-xs font-semibold rounded whitespace-nowrap "+(tab===k?"bg-[#39ff88]/15 text-[#39ff88] border border-[#39ff88]/50":"text-slate-400 hover:text-white border border-transparent")}>{l}</button>)}</nav>
- <div className="ml-auto text-[11px] text-slate-500">v3 · Temporada 2026/27 · corte 6 nov 2026</div></div></header>
+ <div className="ml-auto text-[11px] text-slate-500">Temporada 2026/27 · corte 6 nov 2026</div></div></header>
  <main className="max-w-7xl mx-auto px-4 py-4">
  {tab==="dash"&&<Dashboard/>}{tab==="teams"&&<Teams/>}{tab==="players"&&<Players/>}{tab==="match"&&<Matchup/>}{tab==="props"&&<Props/>}
  <footer className="text-[11px] text-slate-600 text-center mt-6">{REAL?"Datos reales de stats.nba.com vía nba_api. PER y WS/48 no disponibles.":"Estadísticas simuladas con fines de demostración."+(LOADERR?" Motivo: "+LOADERR:"")}</footer></main></div>
