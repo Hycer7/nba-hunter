@@ -1,0 +1,46 @@
+name: Actualizar datos
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  actualizar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar librerías
+        run: pip install nba_api pandas requests
+
+      - name: Calendario
+        continue-on-error: true
+        run: python fetch_schedule.py
+
+      - name: Equipos
+        continue-on-error: true
+        run: python fetch_teams.py
+
+      - name: Jugadores
+        continue-on-error: true
+        run: python fetch_players.py
+
+      - name: Partidos de cada jugador
+        continue-on-error: true
+        run: python fetch_games.py
+
+      - name: Guardar cambios
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add *.json
+          git diff --staged --quiet || git commit -m "Actualizar datos"
+          git push
