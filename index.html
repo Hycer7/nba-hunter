@@ -1,10 +1,15 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8"><title>NBA Hunter · Analítica avanzada NBA</title>
 <link rel="icon" href="favicon.ico" sizes="any">
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="description" content="NBA Hunter: estadísticas avanzadas, props y comparador de equipos y jugadores de la NBA.">
+<meta property="og:title" content="NBA Hunter · Analytics & Data">
+<meta property="og:description" content="Estadísticas avanzadas de la NBA, props por día y comparador H2H.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://hycer7.github.io/nba-hunter/">
+<meta property="og:image" content="https://hycer7.github.io/nba-hunter/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <script src="https://cdn.tailwindcss.com/3.4.17"></script>
 <script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js"></script>
@@ -255,7 +260,7 @@ function Props(){
 }
 
 /* ---------- App ---------- */
-const Logo=()=><svg width="36" height="36" viewBox="0 0 128 128"><rect x="4" y="4" width="120" height="120" rx="28" fill="#0b0f14" stroke="#222c3a" strokeWidth="2"/><g stroke="#39ff88" strokeWidth="4" strokeLinecap="round" fill="none"><circle cx="64" cy="64" r="40"/><line x1="64" y1="12" x2="64" y2="30"/><line x1="64" y1="98" x2="64" y2="116"/><line x1="12" y1="64" x2="30" y2="64"/><line x1="98" y1="64" x2="116" y2="64"/></g><g stroke="#ff8a1f" strokeWidth="3" strokeLinecap="round" fill="none"><circle cx="64" cy="64" r="24"/><line x1="64" y1="40" x2="64" y2="88"/><line x1="40" y1="64" x2="88" y2="64"/><path d="M47 47 Q61 64 47 81"/><path d="M81 47 Q67 64 81 81"/></g><circle cx="64" cy="64" r="3.5" fill="#39ff88"/></svg>;
+const Logo=()=><img src="logo.png" width="44" height="44" alt="NBA Hunter" className="rounded-full"/>;
 function App(){
  const[tab,setTab]=useState("dash");
  const tabs=[["dash","Hunter Dashboard"],["teams","Team Tracker"],["players","Player Scouting"],["match","Hunter Matchup"],["props","Props"]];
